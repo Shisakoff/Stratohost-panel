@@ -10,6 +10,7 @@ import EggDetailPage from './pages/EggDetailPage.vue';
 import ServersPage from './pages/ServersPage.vue';
 import ServerCreatePage from './pages/ServerCreatePage.vue';
 import ServerDetailPage from './pages/ServerDetailPage.vue';
+import DatabaseHostsPage from './pages/DatabaseHostsPage.vue';
 
 const routes = [
     { path: '/login', name: 'login', component: LoginPage, meta: { guest: true } },
@@ -21,6 +22,7 @@ const routes = [
     { path: '/servers', name: 'servers', component: ServersPage },
     { path: '/servers/new', name: 'server-create', component: ServerCreatePage },
     { path: '/servers/:uuid', name: 'server-detail', component: ServerDetailPage, props: true },
+    { path: '/database-hosts', name: 'database-hosts', component: DatabaseHostsPage },
 ];
 
 const router = createRouter({

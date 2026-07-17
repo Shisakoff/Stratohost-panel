@@ -13,9 +13,7 @@ use PDO;
  */
 class DatabaseProvisioner
 {
-    public function __construct(private readonly DatabaseHost $host)
-    {
-    }
+    public function __construct(private readonly DatabaseHost $host) {}
 
     /**
      * Confirms the host's stored credentials actually connect - called
