@@ -46,9 +46,6 @@ class CreateNodeCommand extends Command
         $node->daemon_token = $token['token'];
         $node->save();
 
-        $panelUrl = rtrim(config('app.url'), '/');
-        $repoUrl = config('stratohost.repo_url');
-
         $this->newLine();
         $this->info("Node #{$node->id} ({$node->name}) created.");
         $this->warn('Daemon token (shown once, copy it now):');
@@ -56,15 +53,7 @@ class CreateNodeCommand extends Command
         $this->line("  token:    {$token['token']}");
         $this->newLine();
         $this->info('Run this on the node (as root) to install and register the agent:');
-        $this->line(sprintf(
-            '  git clone --depth 1 %s stratohost && cd stratohost/installer && ./agent-install.sh --panel-url=%s --node-uuid=%s --token-id=%s --token=%s --port=%d',
-            $repoUrl,
-            $panelUrl,
-            $node->uuid,
-            $token['id'],
-            $token['token'],
-            $port
-        ));
+        $this->line('  '.$node->installCommand($token['id'], $token['token']));
 
         return self::SUCCESS;
     }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Agent\AgentClient;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -70,5 +71,31 @@ class Node extends Model
     public function baseUri(): string
     {
         return "{$this->scheme}://{$this->fqdn}:{$this->daemon_port}";
+    }
+
+    public function agent(): AgentClient
+    {
+        return new AgentClient($this);
+    }
+
+    /**
+     * The command an admin runs on the node (as root) to install and
+     * register the agent, using a one-time token pair only ever available
+     * in plaintext right after generateDaemonToken().
+     */
+    public function installCommand(string $tokenId, string $token): string
+    {
+        $repoUrl = config('stratohost.repo_url');
+        $panelUrl = rtrim(config('app.url'), '/');
+
+        return sprintf(
+            'git clone --depth 1 %s stratohost && cd stratohost/installer && ./agent-install.sh --panel-url=%s --node-uuid=%s --token-id=%s --token=%s --port=%d',
+            $repoUrl,
+            $panelUrl,
+            $this->uuid,
+            $tokenId,
+            $token,
+            $this->daemon_port
+        );
     }
 }

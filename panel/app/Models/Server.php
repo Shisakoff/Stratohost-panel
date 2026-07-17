@@ -14,6 +14,15 @@ use Illuminate\Support\Str;
 ])]
 class Server extends Model
 {
+    /**
+     * Servers are addressed by uuid in routes and in the agent's own API,
+     * not by the internal auto-increment id.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
+
     protected static function booted(): void
     {
         static::creating(function (Server $server) {
