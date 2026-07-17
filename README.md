@@ -21,12 +21,16 @@ sudo ./panel-install.sh
 ```
 
 Le script installe Docker si besoin, génère un `.env`, build et démarre les
-conteneurs (panel, base de données, redis, queue, scheduler), puis te
-demande de créer le premier compte admin.
+conteneurs (panel, base de données, redis, queue, scheduler), te demande de
+créer le premier compte admin, puis - par défaut - enregistre **cette même
+machine** comme node et installe l'agent dessus, sans rien à copier-coller :
+en une seule commande tu obtiens un panel fonctionnel avec un node prêt à
+héberger des serveurs de jeu.
 
-## Ajouter un node (serveur qui va héberger des serveurs de jeu)
+## Ajouter un node séparé (autre machine)
 
-Depuis le conteneur du panel, créer le node :
+Si tu veux un node sur une autre machine que le panel, réponds `n` à la
+question posée par `panel-install.sh`, puis depuis le conteneur du panel :
 
 ```bash
 docker compose exec panel php artisan stratohost:node:create
