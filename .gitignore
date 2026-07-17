@@ -1,0 +1,18 @@
+# Root-level ignores for the monorepo. Each component (panel/, agent/)
+# also has its own more specific .gitignore.
+
+.DS_Store
+Thumbs.db
+*.log
+
+# Local Claude Code tool settings, not part of the project
+.claude/
+
+# Go agent build output / local test artifacts
+agent/*.exe
+agent/stratohost-agent
+agent/config.yml
+
+# Never commit real daemon tokens or generated secrets used for local testing
+**/config.yml
+!agent/config.example.yml

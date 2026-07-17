@@ -1,0 +1,68 @@
+services:
+  panel:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    image: stratohost-panel:latest
+    command: ["app"]
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "${PANEL_HTTP_PORT:-8000}:80"
+    volumes:
+      - panel-storage:/var/www/html/storage
+    restart: unless-stopped
+
+  queue:
+    image: stratohost-panel:latest
+    command: ["queue"]
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - panel-storage:/var/www/html/storage
+    restart: unless-stopped
+
+  scheduler:
+    image: stratohost-panel:latest
+    command: ["scheduler"]
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - panel-storage:/var/www/html/storage
+    restart: unless-stopped
+
+  db:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - panel-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+volumes:
+  panel-db:
+  panel-storage:
