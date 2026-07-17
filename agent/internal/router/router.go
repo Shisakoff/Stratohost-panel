@@ -9,13 +9,19 @@ import (
 	"strings"
 
 	"github.com/stratohost/agent/internal/config"
+	"github.com/stratohost/agent/internal/server"
 	"github.com/stratohost/agent/internal/version"
 )
 
-func New(cfg *config.Config, logger *slog.Logger) http.Handler {
+func New(cfg *config.Config, manager *server.Manager, logger *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/system", handleSystem)
+
+	mux.HandleFunc("POST /api/servers/{uuid}", handleCreateServer(manager))
+	mux.HandleFunc("GET /api/servers/{uuid}", handleGetServer(manager))
+	mux.HandleFunc("POST /api/servers/{uuid}/power", handlePowerServer(manager))
+	mux.HandleFunc("DELETE /api/servers/{uuid}", handleDeleteServer(manager))
 
 	return requestLogger(logger, authMiddleware(cfg, mux))
 }

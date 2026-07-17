@@ -11,7 +11,10 @@ import (
 	"os"
 
 	"github.com/stratohost/agent/internal/config"
+	dockerpkg "github.com/stratohost/agent/internal/docker"
+	"github.com/stratohost/agent/internal/panel"
 	"github.com/stratohost/agent/internal/router"
+	"github.com/stratohost/agent/internal/server"
 )
 
 func main() {
@@ -26,8 +29,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	dockerClient, err := dockerpkg.New(cfg.Docker.Socket)
+	if err != nil {
+		logger.Error("failed to create docker client", "error", err)
+		os.Exit(1)
+	}
+
+	panelClient := panel.New(cfg.PanelURL, cfg.Auth.TokenID, cfg.Auth.Token)
+	manager := server.NewManager(dockerClient, panelClient, cfg.DataDir, logger)
+
 	addr := fmt.Sprintf("%s:%d", cfg.API.Host, cfg.API.Port)
-	handler := router.New(cfg, logger)
+	handler := router.New(cfg, manager, logger)
 
 	logger.Info("stratohost-agent starting", "addr", addr, "node_uuid", cfg.UUID)
 

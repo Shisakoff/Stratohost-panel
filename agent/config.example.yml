@@ -19,3 +19,5 @@ auth:
 
 docker:
   socket: "unix:///var/run/docker.sock"
+
+data_dir: "/var/lib/stratohost"

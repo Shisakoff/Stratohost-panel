@@ -31,6 +31,11 @@ type Config struct {
 	Docker struct {
 		Socket string `yaml:"socket"`
 	} `yaml:"docker"`
+
+	// DataDir holds per-server volumes (<data_dir>/volumes/<uuid>) and
+	// cached server configs (<data_dir>/servers/<uuid>.json) - the agent
+	// has no database of its own.
+	DataDir string `yaml:"data_dir"`
 }
 
 func Default() *Config {
@@ -38,6 +43,7 @@ func Default() *Config {
 	c.API.Host = "0.0.0.0"
 	c.API.Port = 8080
 	c.Docker.Socket = "unix:///var/run/docker.sock"
+	c.DataDir = "/var/lib/stratohost"
 	return c
 }
 

@@ -104,8 +104,11 @@ auth:
 
 docker:
   socket: "unix:///var/run/docker.sock"
+
+data_dir: "/var/lib/stratohost"
 EOF
 chmod 600 /etc/stratohost/agent/config.yml
+mkdir -p /var/lib/stratohost
 
 echo "==> Installing systemd service"
 cat > /etc/systemd/system/stratohost-agent.service <<'EOF'
