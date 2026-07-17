@@ -5,7 +5,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-configure intl \
     && docker-php-ext-install pdo_mysql zip bcmath intl opcache pcntl \
     && pecl install redis && docker-php-ext-enable redis \
-    && apt-get purge -y --auto-remove libzip-dev libicu-dev \
     && rm -rf /var/lib/apt/lists/*
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
