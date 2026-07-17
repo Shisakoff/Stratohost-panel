@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\Agent\AgentClient;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
@@ -13,6 +14,11 @@ use Illuminate\Support\Str;
     'memory', 'memory_overallocate', 'disk', 'disk_overallocate',
     'upload_size', 'maintenance_mode',
 ])]
+// The encrypted cast on daemon_token decrypts back to plaintext on every
+// read, including when a Node is serialized to JSON - without this it
+// would leak the live secret to any authenticated admin via GET
+// /api/nodes, defeating the "shown once at creation" design entirely.
+#[Hidden(['daemon_token'])]
 class Node extends Model
 {
     protected function casts(): array
