@@ -1,37 +1,26 @@
 <template>
-    <div v-if="egg" class="max-w-3xl space-y-6">
-        <div>
-            <h1 class="text-2xl font-semibold">{{ egg.name }}</h1>
-            <p class="text-sm text-slate-400">{{ egg.docker_image }}</p>
-        </div>
+    <div v-if="egg">
+        <PageHeader :icon="Egg" :title="egg.name" :subtitle="egg.docker_image" :breadcrumbs="['Admin', 'Nests & Eggs', egg.name]" />
 
-        <div class="rounded-lg border border-slate-800 bg-slate-900 p-6">
-            <h2 class="mb-4 text-lg font-medium">Variables</h2>
+        <div class="card">
+            <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">Variables</h2>
 
-            <table class="mb-4 w-full text-sm">
-                <thead class="text-left text-slate-400">
-                    <tr>
-                        <th class="pb-2">Nom</th>
-                        <th>Env</th>
-                        <th>Défaut</th>
-                        <th>Règles</th>
-                        <th></th>
-                    </tr>
-                </thead>
+            <table class="table-clean mb-6">
+                <thead><tr><th>Nom</th><th>Env</th><th>Défaut</th><th>Règles</th><th></th></tr></thead>
                 <tbody>
-                    <tr v-for="v in variables" :key="v.id" class="border-t border-slate-800">
-                        <td class="py-2">{{ v.name }}</td>
-                        <td><code>{{ v.env_variable }}</code></td>
-                        <td>{{ v.default_value }}</td>
+                    <tr v-for="v in variables" :key="v.id">
+                        <td class="font-medium text-slate-200">{{ v.name }}</td>
+                        <td><code class="text-slate-400">{{ v.env_variable }}</code></td>
+                        <td class="text-slate-400">{{ v.default_value }}</td>
                         <td class="text-slate-500">{{ v.rules }}</td>
-                        <td>
-                            <button type="button" class="text-red-400 hover:underline" @click="removeVariable(v)">
-                                Supprimer
+                        <td class="text-right">
+                            <button type="button" class="text-red-400 hover:text-red-300" title="Supprimer" @click="removeVariable(v)">
+                                <Trash2 class="size-4" />
                             </button>
                         </td>
                     </tr>
                     <tr v-if="variables.length === 0">
-                        <td colspan="5" class="py-2 text-slate-500">Aucune variable pour l'instant.</td>
+                        <td colspan="5" class="py-6 text-slate-500">Aucune variable pour l'instant.</td>
                     </tr>
                 </tbody>
             </table>
@@ -47,8 +36,8 @@
                 </Field>
                 <p v-if="error" class="col-span-2 text-sm text-red-400">{{ error }}</p>
                 <div class="col-span-2">
-                    <button type="submit" class="rounded bg-indigo-600 px-4 py-2 text-sm font-medium hover:bg-indigo-500">
-                        Ajouter
+                    <button type="submit" class="btn-primary">
+                        <Plus class="size-4" /> Ajouter
                     </button>
                 </div>
             </form>
@@ -58,8 +47,10 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
+import { Egg, Plus, Trash2 } from '@lucide/vue';
 import axios from '../lib/api';
 import Field from '../components/Field.vue';
+import PageHeader from '../components/PageHeader.vue';
 
 const props = defineProps({ id: { type: [String, Number], required: true } });
 

@@ -1,53 +1,57 @@
 <template>
-    <div class="max-w-2xl space-y-6">
-        <h1 class="text-2xl font-semibold">Nouveau serveur</h1>
-        <form class="space-y-4 rounded-lg border border-slate-800 bg-slate-900 p-6" @submit.prevent="submit">
-            <Field label="Nom"><input v-model="form.name" required class="input" /></Field>
+    <div>
+        <PageHeader :icon="Swords" title="Nouveau serveur" subtitle="Ajouter un nouveau serveur au panel." :breadcrumbs="['Admin', 'Serveurs', 'Nouveau serveur']" />
 
-            <Field label="Node">
-                <select v-model.number="form.node_id" required class="input" @change="onNodeChange">
-                    <option disabled value="">Choisir un node</option>
-                    <option v-for="n in nodes" :key="n.id" :value="n.id">{{ n.name }}</option>
-                </select>
-            </Field>
-
-            <Field label="Allocation (IP:port)">
-                <select v-model.number="form.allocation_id" required class="input" :disabled="!form.node_id">
-                    <option disabled value="">Choisir une allocation libre</option>
-                    <option v-for="a in freeAllocations" :key="a.id" :value="a.id">{{ a.ip }}:{{ a.port }}</option>
-                </select>
-            </Field>
-
-            <Field label="Egg">
-                <select v-model.number="form.egg_id" required class="input" @change="onEggChange">
-                    <option disabled value="">Choisir un egg</option>
-                    <optgroup v-for="nest in nests" :key="nest.id" :label="nest.name">
-                        <option v-for="egg in nestEggs[nest.id] || []" :key="egg.id" :value="egg.id">
-                            {{ egg.name }}
-                        </option>
-                    </optgroup>
-                </select>
-            </Field>
-
-            <div class="grid grid-cols-3 gap-3">
-                <Field label="Mémoire (MB)"><input v-model.number="form.memory" type="number" required class="input" /></Field>
-                <Field label="Disque (MB)"><input v-model.number="form.disk" type="number" required class="input" /></Field>
-                <Field label="CPU (%)"><input v-model.number="form.cpu" type="number" class="input" /></Field>
+        <form class="space-y-6" @submit.prevent="submit">
+            <div class="card space-y-4">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Détails du serveur</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <Field label="Nom"><input v-model="form.name" required class="input" /></Field>
+                    <Field label="Node">
+                        <select v-model.number="form.node_id" required class="input" @change="onNodeChange">
+                            <option disabled value="">Choisir un node</option>
+                            <option v-for="n in nodes" :key="n.id" :value="n.id">{{ n.name }}</option>
+                        </select>
+                    </Field>
+                    <Field label="Allocation (IP:port)">
+                        <select v-model.number="form.allocation_id" required class="input" :disabled="!form.node_id">
+                            <option disabled value="">Choisir une allocation libre</option>
+                            <option v-for="a in freeAllocations" :key="a.id" :value="a.id">{{ a.ip }}:{{ a.port }}</option>
+                        </select>
+                    </Field>
+                    <Field label="Egg">
+                        <select v-model.number="form.egg_id" required class="input" @change="onEggChange">
+                            <option disabled value="">Choisir un egg</option>
+                            <optgroup v-for="nest in nests" :key="nest.id" :label="nest.name">
+                                <option v-for="egg in nestEggs[nest.id] || []" :key="egg.id" :value="egg.id">
+                                    {{ egg.name }}
+                                </option>
+                            </optgroup>
+                        </select>
+                    </Field>
+                </div>
             </div>
 
-            <div v-if="selectedEggVariables.length" class="space-y-3 border-t border-slate-800 pt-4">
-                <h2 class="text-sm font-medium text-slate-300">Variables</h2>
-                <Field v-for="v in selectedEggVariables" :key="v.id" :label="v.name">
-                    <input v-model="variableValues[v.id]" :placeholder="v.default_value ?? ''" class="input" />
-                </Field>
+            <div class="card space-y-4">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Limites des ressources</h2>
+                <div class="grid grid-cols-3 gap-4">
+                    <Field label="Mémoire (MB)"><input v-model.number="form.memory" type="number" required class="input" /></Field>
+                    <Field label="Disque (MB)"><input v-model.number="form.disk" type="number" required class="input" /></Field>
+                    <Field label="CPU (%)"><input v-model.number="form.cpu" type="number" class="input" /></Field>
+                </div>
             </div>
 
-            <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
-            <button
-                type="submit"
-                :disabled="loading"
-                class="rounded bg-indigo-600 px-4 py-2 text-sm font-medium hover:bg-indigo-500 disabled:opacity-50"
-            >
+            <div v-if="selectedEggVariables.length" class="card space-y-4">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Variables</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <Field v-for="v in selectedEggVariables" :key="v.id" :label="v.name">
+                        <input v-model="variableValues[v.id]" :placeholder="v.default_value ?? ''" class="input" />
+                    </Field>
+                </div>
+            </div>
+
+            <p v-if="error" class="rounded-lg bg-red-950/60 px-3 py-2 text-sm text-red-300">{{ error }}</p>
+            <button type="submit" :disabled="loading" class="btn-primary">
                 {{ loading ? 'Création...' : 'Créer le serveur' }}
             </button>
         </form>
@@ -57,8 +61,10 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { Swords } from '@lucide/vue';
 import axios from '../lib/api';
 import Field from '../components/Field.vue';
+import PageHeader from '../components/PageHeader.vue';
 
 const router = useRouter();
 

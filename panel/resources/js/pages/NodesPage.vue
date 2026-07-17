@@ -1,21 +1,16 @@
 <template>
-    <div class="space-y-6">
-        <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-semibold">Nodes</h1>
-            <button
-                type="button"
-                class="rounded bg-indigo-600 px-4 py-2 text-sm font-medium hover:bg-indigo-500"
-                @click="showForm = !showForm"
-            >
-                {{ showForm ? 'Annuler' : 'Nouveau node' }}
+    <div>
+        <PageHeader :icon="Server" title="Nodes" subtitle="Toutes les machines qui hébergent des serveurs de jeu." :breadcrumbs="['Admin', 'Nodes']" />
+
+        <div class="mb-4 flex gap-3">
+            <input v-model="search" placeholder="Recherche" class="input flex-1" />
+            <button type="button" class="btn-primary" @click="showForm = !showForm">
+                <Plus class="size-4" />
+                {{ showForm ? 'Annuler' : 'Créer' }}
             </button>
         </div>
 
-        <form
-            v-if="showForm"
-            class="grid grid-cols-2 gap-4 rounded-lg border border-slate-800 bg-slate-900 p-6"
-            @submit.prevent="createNode"
-        >
+        <form v-if="showForm" class="card mb-4 grid grid-cols-2 gap-4" @submit.prevent="createNode">
             <Field label="Nom"><input v-model="form.name" required class="input" /></Field>
             <Field label="FQDN"><input v-model="form.fqdn" required placeholder="node1.example.com" class="input" /></Field>
             <Field label="Schéma">
@@ -29,57 +24,71 @@
             <Field label="Disque (MB)"><input v-model.number="form.disk" type="number" required class="input" /></Field>
             <p v-if="error" class="col-span-2 text-sm text-red-400">{{ error }}</p>
             <div class="col-span-2">
-                <button type="submit" class="rounded bg-indigo-600 px-4 py-2 text-sm font-medium hover:bg-indigo-500">
-                    Créer
-                </button>
+                <button type="submit" class="btn-primary">Créer</button>
             </div>
         </form>
 
-        <div v-if="createdToken" class="rounded-lg border border-amber-700 bg-amber-950/40 p-4 text-sm">
-            <p class="mb-2 font-medium text-amber-300">Token affiché une seule fois - copie-le maintenant.</p>
-            <p>token id: <code>{{ createdToken.id }}</code></p>
-            <p>token: <code>{{ createdToken.token }}</code></p>
-            <p class="mb-1 mt-2">Commande à lancer sur le node (en root) :</p>
-            <pre class="overflow-x-auto rounded bg-slate-950 p-3 text-xs">{{ createdCommand }}</pre>
+        <div v-if="createdToken" class="card mb-4 border-amber-700/50 bg-amber-950/20">
+            <p class="mb-3 flex items-center gap-2 text-sm font-medium text-amber-300">
+                <TriangleAlert class="size-4" /> Token affiché une seule fois - copie-le maintenant.
+            </p>
+            <p class="text-sm text-slate-300">token id: <code class="text-amber-200">{{ createdToken.id }}</code></p>
+            <p class="text-sm text-slate-300">token: <code class="text-amber-200">{{ createdToken.token }}</code></p>
+            <p class="mb-1.5 mt-3 text-sm text-slate-400">Commande à lancer sur le node (en root) :</p>
+            <pre class="overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-300">{{ createdCommand }}</pre>
         </div>
 
-        <table class="w-full text-sm">
-            <thead class="text-left text-slate-400">
-                <tr>
-                    <th class="pb-2">Nom</th>
-                    <th>FQDN</th>
-                    <th>Allocations</th>
-                    <th>Serveurs</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="node in nodes" :key="node.id" class="border-t border-slate-800">
-                    <td class="py-2">
-                        <RouterLink :to="`/nodes/${node.id}`" class="text-indigo-400 hover:underline">
-                            {{ node.name }}
-                        </RouterLink>
-                    </td>
-                    <td>{{ node.fqdn }}</td>
-                    <td>{{ node.allocations_count }}</td>
-                    <td>{{ node.servers_count }}</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="card p-0">
+            <table class="table-clean">
+                <thead>
+                    <tr class="px-6">
+                        <th class="pl-6">Nom</th>
+                        <th>FQDN</th>
+                        <th>Allocations</th>
+                        <th>Serveurs</th>
+                        <th class="pr-6"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="node in filteredNodes" :key="node.id">
+                        <td class="pl-6 font-medium text-slate-100">{{ node.name }}</td>
+                        <td class="text-slate-400">{{ node.fqdn }}</td>
+                        <td class="text-slate-400">{{ node.allocations_count }}</td>
+                        <td class="text-slate-400">{{ node.servers_count }}</td>
+                        <td class="pr-6 text-right">
+                            <RouterLink :to="`/nodes/${node.id}`" class="btn-secondary">Gérer</RouterLink>
+                        </td>
+                    </tr>
+                    <tr v-if="filteredNodes.length === 0">
+                        <td colspan="5" class="py-6 pl-6 text-slate-500">Aucun node pour l'instant.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
+import { Plus, Server, TriangleAlert } from '@lucide/vue';
 import axios from '../lib/api';
 import Field from '../components/Field.vue';
+import PageHeader from '../components/PageHeader.vue';
 
 const nodes = ref([]);
+const search = ref('');
 const showForm = ref(false);
 const createdToken = ref(null);
 const createdCommand = ref('');
 const error = ref('');
 const form = ref({ name: '', fqdn: '', scheme: 'https', daemon_port: 8080, memory: 2048, disk: 10240 });
+
+const filteredNodes = computed(() => {
+    const q = search.value.trim().toLowerCase();
+    if (!q) return nodes.value;
+    return nodes.value.filter((n) => n.name.toLowerCase().includes(q) || n.fqdn.toLowerCase().includes(q));
+});
 
 async function load() {
     const { data } = await axios.get('/api/nodes');

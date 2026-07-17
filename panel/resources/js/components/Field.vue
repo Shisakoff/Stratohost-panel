@@ -1,6 +1,6 @@
 <template>
     <label class="block">
-        <span class="mb-1 block text-sm text-slate-400">{{ label }}</span>
+        <span class="mb-1.5 block text-sm font-medium text-slate-300">{{ label }}</span>
         <slot />
     </label>
 </template>

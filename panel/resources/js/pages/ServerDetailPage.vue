@@ -1,62 +1,48 @@
 <template>
-    <div v-if="server" class="max-w-2xl space-y-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-semibold">{{ server.name }}</h1>
-                <p class="text-sm text-slate-400">
-                    {{ server.egg.name }} · {{ server.node.name }} · {{ server.allocation.ip }}:{{ server.allocation.port }}
-                </p>
+    <div v-if="server">
+        <div class="mb-6 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="flex size-11 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
+                    <Swords class="size-5" />
+                </div>
+                <div>
+                    <h1 class="text-xl font-semibold text-slate-100">{{ server.name }}</h1>
+                    <p class="mt-0.5 text-sm text-slate-500">
+                        {{ server.egg.name }} · {{ server.node.name }} · {{ server.allocation.ip }}:{{ server.allocation.port }}
+                    </p>
+                </div>
             </div>
             <StatusBadge :status="liveStatus || server.status" />
         </div>
 
-        <div class="flex gap-3">
-            <button
-                type="button"
-                :disabled="powering"
-                class="rounded bg-emerald-700 px-4 py-2 text-sm font-medium hover:bg-emerald-600 disabled:opacity-50"
-                @click="power('start')"
-            >
-                Démarrer
+        <div class="mb-6 flex gap-3">
+            <button type="button" :disabled="powering" class="btn-secondary" @click="power('start')">
+                <Play class="size-4" /> Démarrer
             </button>
-            <button
-                type="button"
-                :disabled="powering"
-                class="rounded bg-slate-700 px-4 py-2 text-sm font-medium hover:bg-slate-600 disabled:opacity-50"
-                @click="power('stop')"
-            >
-                Arrêter
+            <button type="button" :disabled="powering" class="btn-secondary" @click="power('stop')">
+                <Square class="size-4" /> Arrêter
             </button>
-            <button
-                type="button"
-                :disabled="powering"
-                class="rounded bg-slate-700 px-4 py-2 text-sm font-medium hover:bg-slate-600 disabled:opacity-50"
-                @click="power('restart')"
-            >
-                Redémarrer
+            <button type="button" :disabled="powering" class="btn-secondary" @click="power('restart')">
+                <RotateCw class="size-4" /> Redémarrer
             </button>
-            <button
-                type="button"
-                :disabled="powering"
-                class="rounded bg-red-800 px-4 py-2 text-sm font-medium hover:bg-red-700 disabled:opacity-50"
-                @click="power('kill')"
-            >
-                Forcer l'arrêt
+            <button type="button" :disabled="powering" class="btn-danger" @click="power('kill')">
+                <Skull class="size-4" /> Forcer l'arrêt
             </button>
         </div>
 
-        <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
+        <p v-if="error" class="mb-4 rounded-lg bg-red-950/60 px-3 py-2 text-sm text-red-300">{{ error }}</p>
 
-        <div class="rounded-lg border border-slate-800 bg-slate-900 p-6 text-sm">
-            <dl class="grid grid-cols-2 gap-y-2">
-                <dt class="text-slate-400">Mémoire</dt>
-                <dd>{{ server.memory }} MB</dd>
-                <dt class="text-slate-400">Disque</dt>
-                <dd>{{ server.disk }} MB</dd>
-                <dt class="text-slate-400">CPU</dt>
-                <dd>{{ server.cpu }}%</dd>
-                <dt class="text-slate-400">Démarrage</dt>
-                <dd class="col-span-2 break-all font-mono text-xs text-slate-300">{{ server.startup }}</dd>
+        <div class="card">
+            <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">Configuration</h2>
+            <dl class="grid grid-cols-3 gap-y-4 text-sm">
+                <dt class="text-slate-500">Mémoire</dt>
+                <dd class="col-span-2 text-slate-200">{{ server.memory }} MB</dd>
+                <dt class="text-slate-500">Disque</dt>
+                <dd class="col-span-2 text-slate-200">{{ server.disk }} MB</dd>
+                <dt class="text-slate-500">CPU</dt>
+                <dd class="col-span-2 text-slate-200">{{ server.cpu }}%</dd>
+                <dt class="text-slate-500">Démarrage</dt>
+                <dd class="col-span-2 break-all font-mono text-xs text-slate-400">{{ server.startup }}</dd>
             </dl>
         </div>
     </div>
@@ -64,6 +50,7 @@
 
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue';
+import { Play, RotateCw, Skull, Square, Swords } from '@lucide/vue';
 import axios from '../lib/api';
 import StatusBadge from '../components/StatusBadge.vue';
 

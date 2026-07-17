@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\Api\AllocationController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DatabaseHostController;
 use App\Http\Controllers\Api\EggController;
 use App\Http\Controllers\Api\EggVariableController;
 use App\Http\Controllers\Api\NestController;
 use App\Http\Controllers\Api\NodeController;
 use App\Http\Controllers\Api\ServerController;
+use App\Http\Controllers\Api\ServerDatabaseController;
 use App\Http\Controllers\Api\ServerInstallCallbackController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,4 +43,9 @@ Route::middleware(['auth:sanctum', 'root_admin'])->group(function () {
     Route::apiResource('servers', ServerController::class);
     Route::post('/servers/{server}/power', [ServerController::class, 'power']);
     Route::get('/servers/{server}/status', [ServerController::class, 'status']);
+    Route::apiResource('servers.databases', ServerDatabaseController::class)
+        ->shallow()
+        ->only(['index', 'store', 'destroy']);
+
+    Route::apiResource('database-hosts', DatabaseHostController::class);
 });

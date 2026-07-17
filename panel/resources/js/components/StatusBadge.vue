@@ -1,5 +1,8 @@
 <template>
-    <span :class="['rounded px-2 py-0.5 text-xs font-medium', classes]">{{ status }}</span>
+    <span :class="['badge', classes]">
+        <span class="mr-1.5 size-1.5 rounded-full" :class="dotClasses" />
+        {{ label }}
+    </span>
 </template>
 
 <script setup>
@@ -8,12 +11,15 @@ import { computed } from 'vue';
 const props = defineProps({ status: { type: String, default: 'offline' } });
 
 const styles = {
-    running: 'bg-emerald-900 text-emerald-300',
-    installing: 'bg-amber-900 text-amber-300',
-    install_failed: 'bg-red-900 text-red-300',
-    offline: 'bg-slate-800 text-slate-400',
-    stopped: 'bg-slate-800 text-slate-400',
+    running: { badge: 'bg-emerald-500/10 text-emerald-300', dot: 'bg-emerald-400', label: 'En ligne' },
+    installing: { badge: 'bg-amber-500/10 text-amber-300', dot: 'bg-amber-400', label: 'Installation...' },
+    install_failed: { badge: 'bg-red-500/10 text-red-300', dot: 'bg-red-400', label: 'Échec install' },
+    offline: { badge: 'bg-slate-500/10 text-slate-400', dot: 'bg-slate-500', label: 'Hors ligne' },
+    stopped: { badge: 'bg-slate-500/10 text-slate-400', dot: 'bg-slate-500', label: 'Arrêté' },
 };
 
-const classes = computed(() => styles[props.status] ?? 'bg-slate-800 text-slate-400');
+const current = computed(() => styles[props.status] ?? styles.offline);
+const classes = computed(() => current.value.badge);
+const dotClasses = computed(() => current.value.dot);
+const label = computed(() => current.value.label);
 </script>

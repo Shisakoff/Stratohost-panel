@@ -78,6 +78,11 @@ class Server extends Model
         return $this->hasMany(ServerVariable::class);
     }
 
+    public function databases(): HasMany
+    {
+        return $this->hasMany(ServerDatabase::class);
+    }
+
     /**
      * Body for POST /api/servers/{uuid} on the owning node's agent - see
      * agent/internal/router/servers.go:createServerRequest for the
