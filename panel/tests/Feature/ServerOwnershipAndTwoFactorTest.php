@@ -16,6 +16,17 @@ class ServerOwnershipAndTwoFactorTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Sanctum only starts a session for requests it recognizes as
+        // coming from the SPA's own origin (checked via Origin/Referer
+        // against config('sanctum.stateful')) - a real browser always
+        // sends one, the test client doesn't unless told to.
+        $this->withHeader('Referer', config('app.url'));
+    }
+
     private function makeServer(User $owner): Server
     {
         $node = new Node([
@@ -108,27 +119,33 @@ class ServerOwnershipAndTwoFactorTest extends TestCase
     {
         $user = User::factory()->create(['root_admin' => false, 'password' => bcrypt('password123')]);
 
-        $enable = $this->actingAs($user)->postJson('/api/two-factor/enable');
+        // Fully black-box: log in for real (no 2FA yet) rather than
+        // actingAs(), so the later logout() is guaranteed to actually
+        // clear the same session the enable/confirm calls used.
+        $this->postJson('/api/login', ['email' => $user->email, 'password' => 'password123'])->assertOk();
+
+        $enable = $this->postJson('/api/two-factor/enable');
         $enable->assertOk();
         $secret = $enable->json('secret');
 
         $google2fa = new Google2FA;
         $validCode = $google2fa->getCurrentOtp($secret);
 
-        $confirm = $this->actingAs($user)->postJson('/api/two-factor/confirm', ['code' => $validCode]);
+        $confirm = $this->postJson('/api/two-factor/confirm', ['code' => $validCode]);
         $confirm->assertOk();
         $recoveryCodes = $confirm->json('recovery_codes');
         $this->assertCount(8, $recoveryCodes);
 
-        // Log out the test-acting session and go through the real
-        // password + challenge flow like a browser would.
         $this->post('/api/logout');
+
+        // Not authenticated after logout.
+        $this->getJson('/api/me')->assertUnauthorized();
 
         $login = $this->postJson('/api/login', ['email' => $user->email, 'password' => 'password123']);
         $login->assertOk();
         $login->assertJson(['two_factor' => true]);
 
-        // Not authenticated yet - the pending 2FA state must not grant access.
+        // Password was right but 2FA is pending - still not authenticated.
         $this->getJson('/api/me')->assertUnauthorized();
 
         $challenge = $this->postJson('/api/two-factor-challenge', ['code' => $google2fa->getCurrentOtp($secret)]);
@@ -141,10 +158,12 @@ class ServerOwnershipAndTwoFactorTest extends TestCase
     {
         $user = User::factory()->create(['root_admin' => false, 'password' => bcrypt('password123')]);
 
-        $enable = $this->actingAs($user)->postJson('/api/two-factor/enable');
+        $this->postJson('/api/login', ['email' => $user->email, 'password' => 'password123'])->assertOk();
+
+        $enable = $this->postJson('/api/two-factor/enable');
         $secret = $enable->json('secret');
         $google2fa = new Google2FA;
-        $confirm = $this->actingAs($user)->postJson('/api/two-factor/confirm', [
+        $confirm = $this->postJson('/api/two-factor/confirm', [
             'code' => $google2fa->getCurrentOtp($secret),
         ]);
         $recoveryCode = $confirm->json('recovery_codes')[0];

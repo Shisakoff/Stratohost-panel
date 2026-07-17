@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use PragmaRX\Google2FA\Google2FA;
 
 class AuthController extends Controller
@@ -23,12 +24,12 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        if (! Auth::validate($credentials)) {
+        /** @var User|null $user */
+        $user = User::where('email', $credentials['email'])->first();
+
+        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             abort(422, 'Those credentials do not match our records.');
         }
-
-        /** @var User $user */
-        $user = User::where('email', $credentials['email'])->firstOrFail();
 
         if ($user->hasTwoFactorEnabled()) {
             $request->session()->put(self::PENDING_2FA_SESSION_KEY, $user->id);
@@ -36,7 +37,7 @@ class AuthController extends Controller
             return response()->json(['two_factor' => true]);
         }
 
-        Auth::login($user, remember: true);
+        Auth::guard('web')->login($user, remember: true);
         $request->session()->regenerate();
 
         return response()->json($user);
@@ -59,7 +60,7 @@ class AuthController extends Controller
         }
 
         $request->session()->forget(self::PENDING_2FA_SESSION_KEY);
-        Auth::login($user, remember: true);
+        Auth::guard('web')->login($user, remember: true);
         $request->session()->regenerate();
 
         return response()->json($user);
