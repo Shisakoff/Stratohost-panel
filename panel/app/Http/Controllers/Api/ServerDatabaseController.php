@@ -15,6 +15,8 @@ class ServerDatabaseController extends Controller
 {
     public function index(Server $server): JsonResponse
     {
+        $this->authorize('view', $server);
+
         return response()->json(
             $server->databases()->with('databaseHost:id,name,host,port')->get()
         );
@@ -22,6 +24,8 @@ class ServerDatabaseController extends Controller
 
     public function store(Request $request, Server $server): JsonResponse
     {
+        $this->authorize('view', $server);
+
         $data = $request->validate([
             'database_host_id' => 'required|exists:database_hosts,id',
         ]);
@@ -54,6 +58,8 @@ class ServerDatabaseController extends Controller
 
     public function destroy(ServerDatabase $database): JsonResponse
     {
+        $this->authorize('view', $database->server);
+
         (new DatabaseProvisioner($database->databaseHost))
             ->drop($database->database, $database->username, $database->remote);
 

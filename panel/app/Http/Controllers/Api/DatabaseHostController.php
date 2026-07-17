@@ -7,12 +7,30 @@ use App\Models\DatabaseHost;
 use App\Services\Database\DatabaseProvisioner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Throwable;
 
-class DatabaseHostController extends Controller
+class DatabaseHostController extends Controller implements HasMiddleware
 {
-    public function index(): JsonResponse
+    /**
+     * Any authenticated user can list hosts (they need to pick one when
+     * adding a database to their own server) - only managing hosts
+     * themselves is admin-only.
+     */
+    public static function middleware(): array
     {
+        return [
+            new Middleware('root_admin', only: ['store', 'update', 'destroy']),
+        ];
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        if (! $request->user()->root_admin) {
+            return response()->json(DatabaseHost::orderBy('name')->get(['id', 'name']));
+        }
+
         return response()->json(DatabaseHost::withCount('serverDatabases')->orderBy('name')->get());
     }
 

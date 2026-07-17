@@ -13,7 +13,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
 #[Fillable(['name', 'email', 'password', 'root_admin'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -30,7 +30,15 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'root_admin' => 'boolean',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_confirmed_at !== null;
     }
 
     protected static function booted(): void

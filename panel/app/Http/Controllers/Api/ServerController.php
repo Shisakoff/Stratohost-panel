@@ -9,19 +9,36 @@ use App\Models\Server;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
-class ServerController extends Controller
+class ServerController extends Controller implements HasMiddleware
 {
-    public function index(): JsonResponse
+    /**
+     * Creating/editing/deleting servers is admin-only; viewing, power
+     * actions, and databases are open to any authenticated user but
+     * scoped to their own servers via ServerPolicy::view.
+     */
+    public static function middleware(): array
     {
-        return response()->json(
-            Server::with(['node:id,name', 'egg:id,name', 'allocation:id,ip,port', 'owner:id,name'])
-                ->orderBy('name')
-                ->get()
-        );
+        return [
+            new Middleware('root_admin', only: ['store', 'update', 'destroy']),
+        ];
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        $query = Server::with(['node:id,name', 'egg:id,name', 'allocation:id,ip,port', 'owner:id,name'])
+            ->orderBy('name');
+
+        if (! $request->user()->root_admin) {
+            $query->where('owner_id', $request->user()->id);
+        }
+
+        return response()->json($query->get());
     }
 
     public function store(Request $request): JsonResponse
@@ -93,8 +110,10 @@ class ServerController extends Controller
         return response()->json($server->load(['node', 'egg', 'allocation', 'variables.eggVariable']), 201);
     }
 
-    public function show(Server $server): JsonResponse
+    public function show(Request $request, Server $server): JsonResponse
     {
+        $this->authorize('view', $server);
+
         return response()->json($server->load(['node', 'egg', 'allocation', 'owner', 'variables.eggVariable']));
     }
 
@@ -134,6 +153,8 @@ class ServerController extends Controller
 
     public function power(Request $request, Server $server): JsonResponse
     {
+        $this->authorize('view', $server);
+
         $data = $request->validate([
             'action' => 'required|in:start,stop,restart,kill',
         ]);
@@ -150,8 +171,10 @@ class ServerController extends Controller
      * Live container state from the node's agent - servers.status only
      * tracks the install lifecycle, not moment-to-moment running/stopped.
      */
-    public function status(Server $server): JsonResponse
+    public function status(Request $request, Server $server): JsonResponse
     {
+        $this->authorize('view', $server);
+
         $response = $server->node->agent()->status($server);
         if (! $response->successful()) {
             abort(502, 'Could not reach the node to check server status.');
