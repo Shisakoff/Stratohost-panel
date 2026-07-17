@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div v-if="auth.user?.root_admin">
         <PageHeader :icon="LayoutDashboard" title="Tableau de bord" subtitle="Vue d'ensemble de ton infrastructure." :breadcrumbs="['Admin', 'Tableau de bord']" />
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -31,6 +31,38 @@
             </RouterLink>
         </div>
     </div>
+
+    <div v-else>
+        <PageHeader :icon="Swords" title="Mes serveurs" subtitle="Les serveurs de jeu associés à ton compte." :breadcrumbs="['Mes serveurs']" />
+
+        <div class="card p-0">
+            <table class="table-clean">
+                <thead>
+                    <tr>
+                        <th class="pl-6">Nom</th>
+                        <th>Egg</th>
+                        <th>Connexion</th>
+                        <th>Statut</th>
+                        <th class="pr-6"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="server in servers" :key="server.uuid">
+                        <td class="pl-6 font-medium text-slate-100">{{ server.name }}</td>
+                        <td class="text-slate-400">{{ server.egg.name }}</td>
+                        <td class="font-mono text-xs text-slate-400">{{ server.allocation.ip }}:{{ server.allocation.port }}</td>
+                        <td><StatusBadge :status="server.status" /></td>
+                        <td class="pr-6 text-right">
+                            <RouterLink :to="`/servers/${server.uuid}`" class="btn-secondary">Gérer</RouterLink>
+                        </td>
+                    </tr>
+                    <tr v-if="servers.length === 0">
+                        <td colspan="5" class="py-6 pl-6 text-slate-500">Aucun serveur pour l'instant.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </template>
 
 <script setup>
@@ -39,6 +71,11 @@ import { RouterLink } from 'vue-router';
 import { Database, LayoutDashboard, Server, Sprout, Swords } from '@lucide/vue';
 import axios from '../lib/api';
 import PageHeader from '../components/PageHeader.vue';
+import StatusBadge from '../components/StatusBadge.vue';
+import { useAuthStore } from '../stores/auth';
+
+const auth = useAuthStore();
+const servers = ref([]);
 
 const stats = ref([
     { label: 'Nodes', value: '—', icon: Server },
@@ -55,20 +92,25 @@ const links = [
 ];
 
 onMounted(async () => {
-    const [nodes, servers, nests, hosts] = await Promise.all([
-        axios.get('/api/nodes'),
-        axios.get('/api/servers'),
-        axios.get('/api/nests'),
-        axios.get('/api/database-hosts'),
-    ]);
+    if (auth.user?.root_admin) {
+        const [nodes, serversRes, nests, hosts] = await Promise.all([
+            axios.get('/api/nodes'),
+            axios.get('/api/servers'),
+            axios.get('/api/nests'),
+            axios.get('/api/database-hosts'),
+        ]);
 
-    const eggCount = nests.data.reduce((sum, nest) => sum + nest.eggs_count, 0);
+        const eggCount = nests.data.reduce((sum, nest) => sum + nest.eggs_count, 0);
 
-    stats.value = [
-        { label: 'Nodes', value: nodes.data.length, icon: Server },
-        { label: 'Serveurs', value: servers.data.length, icon: Swords },
-        { label: 'Eggs', value: eggCount, icon: Sprout },
-        { label: 'Bases de données', value: hosts.data.length, icon: Database },
-    ];
+        stats.value = [
+            { label: 'Nodes', value: nodes.data.length, icon: Server },
+            { label: 'Serveurs', value: serversRes.data.length, icon: Swords },
+            { label: 'Eggs', value: eggCount, icon: Sprout },
+            { label: 'Bases de données', value: hosts.data.length, icon: Database },
+        ];
+    } else {
+        const { data } = await axios.get('/api/servers');
+        servers.value = data;
+    }
 });
 </script>

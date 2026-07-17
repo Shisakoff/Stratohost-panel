@@ -6,7 +6,7 @@
             </div>
 
             <nav class="flex-1 space-y-6 overflow-y-auto px-3 py-4">
-                <div v-for="group in navGroups" :key="group.label" class="space-y-1">
+                <div v-for="group in visibleNavGroups" :key="group.label" class="space-y-1">
                     <div class="nav-group-label mb-1">{{ group.label }}</div>
                     <RouterLink
                         v-for="item in group.items"
@@ -22,7 +22,10 @@
             </nav>
 
             <div class="border-t border-slate-800/80 p-3">
-                <div class="flex items-center gap-3 rounded-lg px-2 py-2">
+                <RouterLink
+                    to="/security"
+                    class="mb-1 flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-slate-800/60"
+                >
                     <div
                         class="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-sm font-semibold text-emerald-400"
                     >
@@ -36,11 +39,11 @@
                         type="button"
                         title="Déconnexion"
                         class="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-200"
-                        @click="logout"
+                        @click.prevent="logout"
                     >
                         <LogOut class="size-4" />
                     </button>
-                </div>
+                </RouterLink>
             </div>
         </aside>
 
@@ -57,7 +60,7 @@
 <script setup>
 import { computed } from 'vue';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
-import { Database, LayoutDashboard, LogOut, Server, Sprout, Swords } from '@lucide/vue';
+import { Database, LayoutDashboard, LogOut, Server, Sprout, Swords, Users } from '@lucide/vue';
 import { useAuthStore } from './stores/auth';
 import Logo from './components/Logo.vue';
 
@@ -71,6 +74,7 @@ const navGroups = [
     },
     {
         label: 'Infrastructure',
+        adminOnly: true,
         items: [
             { to: '/nodes', label: 'Nodes', icon: Server },
             { to: '/database-hosts', label: 'Bases de données', icon: Database },
@@ -78,13 +82,21 @@ const navGroups = [
     },
     {
         label: 'Contenu',
+        adminOnly: true,
         items: [{ to: '/nests', label: 'Nests & Eggs', icon: Sprout }],
     },
     {
         label: 'Serveurs',
-        items: [{ to: '/servers', label: 'Serveurs', icon: Swords }],
+        items: [{ to: '/servers', label: auth.user?.root_admin ? 'Serveurs' : 'Mes serveurs', icon: Swords }],
+    },
+    {
+        label: 'Gestion',
+        adminOnly: true,
+        items: [{ to: '/users', label: 'Utilisateurs', icon: Users }],
     },
 ];
+
+const visibleNavGroups = computed(() => navGroups.filter((group) => !group.adminOnly || auth.user?.root_admin));
 
 const initials = computed(() => {
     const name = auth.user?.name ?? '';

@@ -7,7 +7,7 @@
                 <Logo :size="40" />
             </div>
 
-            <form class="card space-y-5" @submit.prevent="submit">
+            <form v-if="!needsTwoFactor" class="card space-y-5" @submit.prevent="submit">
                 <div>
                     <h1 class="text-lg font-semibold text-slate-100">Connexion</h1>
                     <p class="mt-1 text-sm text-slate-500">Accède à ton panel StratoHost.</p>
@@ -28,6 +28,26 @@
                     {{ loading ? 'Connexion...' : 'Se connecter' }}
                 </button>
             </form>
+
+            <form v-else class="card space-y-5" @submit.prevent="submitChallenge">
+                <div>
+                    <h1 class="text-lg font-semibold text-slate-100">Vérification en deux étapes</h1>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Entre le code de ton application d'authentification, ou un code de récupération.
+                    </p>
+                </div>
+
+                <label class="block">
+                    <span class="mb-1.5 block text-sm font-medium text-slate-300">Code</span>
+                    <input v-model="code" required autofocus class="input" placeholder="123456" />
+                </label>
+
+                <p v-if="error" class="rounded-lg bg-red-950/60 px-3 py-2 text-sm text-red-300">{{ error }}</p>
+
+                <button type="submit" :disabled="loading" class="btn-primary w-full justify-center">
+                    {{ loading ? 'Vérification...' : 'Vérifier' }}
+                </button>
+            </form>
         </div>
     </div>
 </template>
@@ -40,6 +60,8 @@ import Logo from '../components/Logo.vue';
 
 const email = ref('');
 const password = ref('');
+const code = ref('');
+const needsTwoFactor = ref(false);
 const error = ref('');
 const loading = ref(false);
 
@@ -51,10 +73,27 @@ async function submit() {
     loading.value = true;
     error.value = '';
     try {
-        await auth.login(email.value, password.value);
-        router.push(route.query.redirect || { name: 'dashboard' });
+        const { twoFactor } = await auth.login(email.value, password.value);
+        if (twoFactor) {
+            needsTwoFactor.value = true;
+        } else {
+            router.push(route.query.redirect || { name: 'dashboard' });
+        }
     } catch (e) {
         error.value = e.response?.data?.message || 'Connexion impossible.';
+    } finally {
+        loading.value = false;
+    }
+}
+
+async function submitChallenge() {
+    loading.value = true;
+    error.value = '';
+    try {
+        await auth.completeTwoFactorChallenge(code.value);
+        router.push(route.query.redirect || { name: 'dashboard' });
+    } catch (e) {
+        error.value = e.response?.data?.message || 'Code invalide.';
     } finally {
         loading.value = false;
     }

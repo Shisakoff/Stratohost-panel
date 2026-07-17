@@ -138,7 +138,12 @@ class ServerOwnershipAndTwoFactorTest extends TestCase
 
         $this->post('/api/logout');
 
-        // Not authenticated after logout.
+        // Not authenticated after logout. Laravel's AuthManager caches a
+        // resolved guard instance for the lifetime of the test's shared
+        // app container, which a real independent HTTP request never
+        // does - force it to re-resolve so this check reflects the same
+        // thing a real subsequent request would see.
+        $this->app->forgetInstance('auth');
         $this->getJson('/api/me')->assertUnauthorized();
 
         $login = $this->postJson('/api/login', ['email' => $user->email, 'password' => 'password123']);
@@ -146,11 +151,13 @@ class ServerOwnershipAndTwoFactorTest extends TestCase
         $login->assertJson(['two_factor' => true]);
 
         // Password was right but 2FA is pending - still not authenticated.
+        $this->app->forgetInstance('auth');
         $this->getJson('/api/me')->assertUnauthorized();
 
         $challenge = $this->postJson('/api/two-factor-challenge', ['code' => $google2fa->getCurrentOtp($secret)]);
         $challenge->assertOk();
 
+        $this->app->forgetInstance('auth');
         $this->getJson('/api/me')->assertOk();
     }
 
