@@ -13,7 +13,12 @@ return new class extends Migration
     {
         Schema::create('server_variables', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('server_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('egg_variable_id')->constrained()->cascadeOnDelete();
+            $table->text('value')->nullable();
             $table->timestamps();
+
+            $table->unique(['server_id', 'egg_variable_id']);
         });
     }
 

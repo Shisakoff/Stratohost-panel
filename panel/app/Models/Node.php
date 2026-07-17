@@ -37,6 +37,11 @@ class Node extends Model
         return $this->hasMany(Allocation::class);
     }
 
+    public function servers(): HasMany
+    {
+        return $this->hasMany(Server::class);
+    }
+
     /**
      * Generate a fresh public token id + secret pair for a new node. The
      * secret is only ever available in plaintext at creation time - the

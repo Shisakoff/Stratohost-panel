@@ -13,4 +13,9 @@ class Allocation extends Model
     {
         return $this->belongsTo(Node::class);
     }
+
+    public function server(): BelongsTo
+    {
+        return $this->belongsTo(Server::class);
+    }
 }
