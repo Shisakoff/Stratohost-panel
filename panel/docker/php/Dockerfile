@@ -1,3 +1,15 @@
+# Vite/Vue build in its own stage - the final image never needs Node, just
+# the compiled public/build/ output. Without this, Blade's @vite() call
+# fails at request time with "Vite manifest not found" since nothing else
+# in this Dockerfile ever ran `npm run build`.
+FROM node:22-alpine AS assets
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY vite.config.js ./
+COPY resources resources
+RUN npm run build
+
 FROM php:8.3-apache
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -22,6 +34,7 @@ COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-interaction
 
 COPY . .
+COPY --from=assets /app/public/build /var/www/html/public/build
 RUN composer dump-autoload --optimize --no-interaction \
     && chown -R www-data:www-data storage bootstrap/cache
 
