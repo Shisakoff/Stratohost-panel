@@ -44,29 +44,9 @@
                         </li>
                     </ul>
 
-                    <button type="button" class="btn-ghost !px-0" @click="toggleEggForm(nest)">
+                    <RouterLink :to="`/nests/${nest.id}/eggs/new`" class="btn-ghost !px-0">
                         <Plus class="size-4" /> Ajouter un egg
-                    </button>
-
-                    <form
-                        v-if="showEggForm[nest.id]"
-                        class="space-y-3 rounded-lg border border-slate-800 bg-slate-950/60 p-4"
-                        @submit.prevent="createEgg(nest)"
-                    >
-                        <Field label="Nom"><input v-model="eggForm.name" required class="input" /></Field>
-                        <Field label="Image Docker">
-                            <input v-model="eggForm.docker_image" required placeholder="itzg/minecraft-server" class="input" />
-                        </Field>
-                        <Field label="Commande de démarrage">
-                            <textarea v-model="eggForm.startup" required rows="2" class="input"></textarea>
-                        </Field>
-                        <Field label="Commande d'arrêt"><input v-model="eggForm.stop_command" placeholder="stop" class="input" /></Field>
-                        <Field label="Script d'installation (optionnel)">
-                            <textarea v-model="eggForm.install_script" rows="4" class="input"></textarea>
-                        </Field>
-                        <p v-if="eggError" class="text-sm text-red-400">{{ eggError }}</p>
-                        <button type="submit" class="btn-primary">Créer l'egg</button>
-                    </form>
+                    </RouterLink>
                 </div>
             </div>
 
@@ -87,12 +67,8 @@ const nests = ref([]);
 const expanded = reactive({});
 const eggsByNest = reactive({});
 const showNestForm = ref(false);
-const showEggForm = reactive({});
-const eggError = ref('');
 
 const nestForm = ref({ name: '', description: '' });
-const emptyEggForm = () => ({ name: '', docker_image: '', startup: '', stop_command: 'stop', install_script: '' });
-const eggForm = ref(emptyEggForm());
 
 async function load() {
     const { data } = await axios.get('/api/nests');
@@ -112,28 +88,11 @@ async function toggleNest(nest) {
     }
 }
 
-function toggleEggForm(nest) {
-    showEggForm[nest.id] = !showEggForm[nest.id];
-    eggError.value = '';
-}
-
 async function createNest() {
     await axios.post('/api/nests', nestForm.value);
     nestForm.value = { name: '', description: '' };
     showNestForm.value = false;
     await load();
-}
-
-async function createEgg(nest) {
-    eggError.value = '';
-    try {
-        await axios.post(`/api/nests/${nest.id}/eggs`, eggForm.value);
-        eggForm.value = emptyEggForm();
-        showEggForm[nest.id] = false;
-        await loadEggs(nest);
-    } catch (e) {
-        eggError.value = e.response?.data?.message || 'Création impossible.';
-    }
 }
 
 onMounted(load);

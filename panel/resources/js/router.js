@@ -6,6 +6,7 @@ import DashboardPage from './pages/DashboardPage.vue';
 import NodesPage from './pages/NodesPage.vue';
 import NodeDetailPage from './pages/NodeDetailPage.vue';
 import NestsPage from './pages/NestsPage.vue';
+import EggCreatePage from './pages/EggCreatePage.vue';
 import EggDetailPage from './pages/EggDetailPage.vue';
 import ServersPage from './pages/ServersPage.vue';
 import ServerCreatePage from './pages/ServerCreatePage.vue';
@@ -20,6 +21,7 @@ const routes = [
     { path: '/nodes', name: 'nodes', component: NodesPage, meta: { adminOnly: true } },
     { path: '/nodes/:id', name: 'node-detail', component: NodeDetailPage, props: true, meta: { adminOnly: true } },
     { path: '/nests', name: 'nests', component: NestsPage, meta: { adminOnly: true } },
+    { path: '/nests/:nestId/eggs/new', name: 'egg-create', component: EggCreatePage, props: true, meta: { adminOnly: true } },
     { path: '/eggs/:id', name: 'egg-detail', component: EggDetailPage, props: true, meta: { adminOnly: true } },
     { path: '/servers', name: 'servers', component: ServersPage },
     { path: '/servers/new', name: 'server-create', component: ServerCreatePage, meta: { adminOnly: true } },

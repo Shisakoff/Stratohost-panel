@@ -43,6 +43,8 @@
                         <th>Egg</th>
                         <th>Connexion</th>
                         <th>Statut</th>
+                        <th>CPU</th>
+                        <th>RAM</th>
                         <th class="pr-6"></th>
                     </tr>
                 </thead>
@@ -52,12 +54,14 @@
                         <td class="text-slate-400">{{ server.egg.name }}</td>
                         <td class="font-mono text-xs text-slate-400">{{ server.allocation.ip }}:{{ server.allocation.port }}</td>
                         <td><StatusBadge :status="server.status" /></td>
+                        <td class="text-slate-400">{{ serverStats[server.uuid] ? `${serverStats[server.uuid].cpu_percent.toFixed(0)} %` : '—' }}</td>
+                        <td class="text-slate-400">{{ serverStats[server.uuid] ? formatMemory(serverStats[server.uuid].memory_usage_bytes) : '—' }}</td>
                         <td class="pr-6 text-right">
                             <RouterLink :to="`/servers/${server.uuid}`" class="btn-secondary">Gérer</RouterLink>
                         </td>
                     </tr>
                     <tr v-if="servers.length === 0">
-                        <td colspan="5" class="py-6 pl-6 text-slate-500">Aucun serveur pour l'instant.</td>
+                        <td colspan="7" class="py-6 pl-6 text-slate-500">Aucun serveur pour l'instant.</td>
                     </tr>
                 </tbody>
             </table>
@@ -66,7 +70,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, onUnmounted, reactive, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import { Database, LayoutDashboard, Server, Sprout, Swords } from '@lucide/vue';
 import axios from '../lib/api';
@@ -76,6 +80,27 @@ import { useAuthStore } from '../stores/auth';
 
 const auth = useAuthStore();
 const servers = ref([]);
+const serverStats = reactive({});
+let statsPollHandle = null;
+
+function formatMemory(bytes) {
+    const mb = bytes / 1024 / 1024;
+    if (mb >= 1024) return `${(mb / 1024).toFixed(2)} GB`;
+    return `${Math.round(mb)} MB`;
+}
+
+async function pollServerStats() {
+    await Promise.all(
+        servers.value.map(async (server) => {
+            try {
+                const { data } = await axios.get(`/api/servers/${server.uuid}/stats`);
+                serverStats[server.uuid] = data;
+            } catch {
+                // Node unreachable right now - keep showing the last known reading.
+            }
+        })
+    );
+}
 
 const stats = ref([
     { label: 'Nodes', value: '—', icon: Server },
@@ -111,6 +136,14 @@ onMounted(async () => {
     } else {
         const { data } = await axios.get('/api/servers');
         servers.value = data;
+        await pollServerStats();
+        statsPollHandle = setInterval(pollServerStats, 5000);
+    }
+});
+
+onUnmounted(() => {
+    if (statsPollHandle) {
+        clearInterval(statsPollHandle);
     }
 });
 </script>

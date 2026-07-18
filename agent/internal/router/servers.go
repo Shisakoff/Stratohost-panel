@@ -92,3 +92,17 @@ func handleGetServer(manager *server.Manager) http.HandlerFunc {
 		writeJSON(w, http.StatusOK, manager.Status(r.Context(), uuid))
 	}
 }
+
+func handleGetServerStats(manager *server.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		uuid := r.PathValue("uuid")
+
+		stats, err := manager.Stats(r.Context(), uuid)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+
+		writeJSON(w, http.StatusOK, stats)
+	}
+}

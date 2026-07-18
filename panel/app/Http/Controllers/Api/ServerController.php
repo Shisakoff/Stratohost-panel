@@ -183,6 +183,64 @@ class ServerController extends Controller implements HasMiddleware
         return response()->json($response->json());
     }
 
+    /**
+     * Live CPU/memory sample from the node's agent, for the "Mes serveurs"
+     * dashboard and server detail graphs. Unlike status(), a failed/empty
+     * read isn't fatal - the frontend just skips that tick of the graph.
+     */
+    public function stats(Request $request, Server $server): JsonResponse
+    {
+        $this->authorize('view', $server);
+
+        $response = $server->node->agent()->stats($server);
+        if (! $response->successful()) {
+            abort(502, 'Could not reach the node to read server stats.');
+        }
+
+        return response()->json($response->json());
+    }
+
+    /**
+     * Lets a server's owner (not just admins) tweak the egg's startup
+     * variables - e.g. the FiveM license key or a hostname - without
+     * needing root_admin. Values are validated against the same rules
+     * the egg variable was defined with, and non-admins are blocked from
+     * touching a variable the egg marked as not user_editable.
+     */
+    public function updateVariables(Request $request, Server $server): JsonResponse
+    {
+        $this->authorize('view', $server);
+
+        $data = $request->validate([
+            'variables' => 'required|array',
+            'variables.*.egg_variable_id' => 'required|integer',
+            'variables.*.value' => 'nullable|string',
+        ]);
+
+        $server->loadMissing('egg.variables');
+        $eggVariables = $server->egg->variables->keyBy('id');
+        $isAdmin = (bool) $request->user()->root_admin;
+
+        foreach ($data['variables'] as $entry) {
+            $eggVariable = $eggVariables->get($entry['egg_variable_id']);
+            if (! $eggVariable) {
+                abort(422, 'That variable does not belong to this server\'s egg.');
+            }
+            if (! $isAdmin && ! $eggVariable->user_editable) {
+                abort(403, "You can't edit \"{$eggVariable->name}\".");
+            }
+
+            Validator::make(['value' => $entry['value']], ['value' => $eggVariable->rules])->validate();
+
+            $server->variables()->updateOrCreate(
+                ['egg_variable_id' => $eggVariable->id],
+                ['value' => $entry['value']]
+            );
+        }
+
+        return response()->json($server->load('variables.eggVariable'));
+    }
+
     private function provision(Server $server): void
     {
         try {

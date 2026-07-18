@@ -46,6 +46,11 @@ class AgentClient
         return $this->request()->get("/api/servers/{$server->uuid}");
     }
 
+    public function stats(Server $server): Response
+    {
+        return $this->request()->get("/api/servers/{$server->uuid}/stats");
+    }
+
     private function request(): PendingRequest
     {
         return Http::baseUrl($this->node->baseUri())

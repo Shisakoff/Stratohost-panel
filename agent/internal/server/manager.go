@@ -325,3 +325,16 @@ func (m *Manager) Status(ctx context.Context, uuid string) StatusResponse {
 
 	return StatusResponse{Status: StatusOffline}
 }
+
+// Stats reports live resource usage for a running server. A server that
+// isn't currently running (stopped, installing, offline) has nothing to
+// sample, so this returns the zero value rather than an error - the panel
+// treats that the same as "no data yet" instead of surfacing a failure.
+func (m *Manager) Stats(ctx context.Context, uuid string) (dockerpkg.Stats, error) {
+	info, err := m.docker.InspectContainer(ctx, containerName(uuid))
+	if err != nil || info.State == nil || !info.State.Running {
+		return dockerpkg.Stats{}, nil
+	}
+
+	return m.docker.ContainerStats(ctx, containerName(uuid))
+}

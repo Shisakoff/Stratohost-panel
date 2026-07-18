@@ -38,6 +38,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('servers', ServerController::class);
     Route::post('/servers/{server}/power', [ServerController::class, 'power']);
     Route::get('/servers/{server}/status', [ServerController::class, 'status']);
+    Route::get('/servers/{server}/stats', [ServerController::class, 'stats']);
+    Route::patch('/servers/{server}/variables', [ServerController::class, 'updateVariables']);
     Route::apiResource('servers.databases', ServerDatabaseController::class)
         ->shallow()
         ->only(['index', 'store', 'destroy']);

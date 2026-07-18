@@ -20,6 +20,7 @@ func New(cfg *config.Config, manager *server.Manager, logger *slog.Logger) http.
 
 	mux.HandleFunc("POST /api/servers/{uuid}", handleCreateServer(manager))
 	mux.HandleFunc("GET /api/servers/{uuid}", handleGetServer(manager))
+	mux.HandleFunc("GET /api/servers/{uuid}/stats", handleGetServerStats(manager))
 	mux.HandleFunc("POST /api/servers/{uuid}/power", handlePowerServer(manager))
 	mux.HandleFunc("DELETE /api/servers/{uuid}", handleDeleteServer(manager))
 
