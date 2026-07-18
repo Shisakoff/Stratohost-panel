@@ -6,19 +6,26 @@
             </div>
 
             <nav class="flex-1 space-y-6 overflow-y-auto px-3 py-4">
-                <div v-for="group in visibleNavGroups" :key="group.label" class="space-y-1">
-                    <div class="nav-group-label mb-1">{{ group.label }}</div>
-                    <RouterLink
-                        v-for="item in group.items"
-                        :key="item.to"
-                        :to="item.to"
-                        class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-800/60 hover:text-slate-100"
-                        active-class="!bg-emerald-500/10 !text-emerald-400"
-                    >
-                        <component :is="item.icon" class="size-[18px] shrink-0" />
-                        {{ item.label }}
+                <ServerNav v-if="isServerScoped" :uuid="String(route.params.uuid)" />
+
+                <template v-else>
+                    <RouterLink to="/" class="nav-link mb-2" active-class="nav-link-active">
+                        <LayoutDashboard class="size-[18px] shrink-0" /> Tableau de bord
                     </RouterLink>
-                </div>
+
+                    <div v-for="group in visibleNavGroups" :key="group.label" class="space-y-1">
+                        <button type="button" class="nav-group-toggle" @click="openGroups[group.label] = !openGroups[group.label]">
+                            {{ group.label }}
+                            <ChevronDown class="size-3.5 transition-transform" :class="{ '-rotate-90': !openGroups[group.label] }" />
+                        </button>
+                        <div v-show="openGroups[group.label]" class="space-y-1">
+                            <RouterLink v-for="item in group.items" :key="item.to" :to="item.to" class="nav-link" active-class="nav-link-active">
+                                <component :is="item.icon" class="size-[18px] shrink-0" />
+                                {{ item.label }}
+                            </RouterLink>
+                        </div>
+                    </div>
+                </template>
             </nav>
 
             <div class="border-t border-slate-800/80 p-3">
@@ -58,20 +65,20 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { RouterLink, RouterView, useRouter } from 'vue-router';
-import { Database, LayoutDashboard, LogOut, Server, Sprout, Swords, Users } from '@lucide/vue';
+import { computed, reactive } from 'vue';
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
+import { ChevronDown, Database, LayoutDashboard, LogOut, Server, Sprout, Swords, Users } from '@lucide/vue';
 import { useAuthStore } from './stores/auth';
 import Logo from './components/Logo.vue';
+import ServerNav from './components/ServerNav.vue';
 
 const auth = useAuthStore();
 const router = useRouter();
+const route = useRoute();
+
+const isServerScoped = computed(() => route.matched.some((record) => record.meta.serverScoped));
 
 const navGroups = [
-    {
-        label: 'Général',
-        items: [{ to: '/', label: 'Tableau de bord', icon: LayoutDashboard }],
-    },
     {
         label: 'Infrastructure',
         adminOnly: true,
@@ -95,6 +102,8 @@ const navGroups = [
         items: [{ to: '/users', label: 'Utilisateurs', icon: Users }],
     },
 ];
+
+const openGroups = reactive(Object.fromEntries(navGroups.map((group) => [group.label, true])));
 
 const visibleNavGroups = computed(() => navGroups.filter((group) => !group.adminOnly || auth.user?.root_admin));
 
